@@ -1,31 +1,46 @@
-name: Build PyQt Windows App
+name: Build Installer
 
 on:
   push:
     branches: [ main ]
 
 jobs:
-  build-windows:
+  build-installer:
     runs-on: windows-latest
 
     steps:
-      - uses: actions/checkout@v3
+      # 1. Checkout Code
+      - uses: actions/checkout@v4
 
+      # 2. Setup Python
       - name: Setup Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
-          python-version: '3.10'
-
+          python-version: '3.10' 
+          
+      # 3. Install Python Deps
       - name: Install Libraries
         run: |
           pip install -r requirements.txt
 
+      # 4. Build the Standalone EXE first
       - name: Compile Application
         run: |
           pyinstaller --noconsole --onefile --name SuccessIndexApp --collect-all qfluentwidgets main.py
 
-      - name: Upload Artifact
+      # 5. Install Inno Setup (The Installer Maker)
+      - name: Install Inno Setup
+        run: |
+          choco install innosetup
+
+      # 6. Run Inno Setup to create the Installer
+      - name: Build Installer
+        run: |
+          "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" setup.iss
+
+      # 7. Upload the SETUP file (Not the standalone exe)
+      - name: Upload Installer
         uses: actions/upload-artifact@v4
         with:
-          name: SuccessIndexApp
-          path: dist/SuccessIndexApp.exe
+          name: SuccessIndex_Setup
+          path: Output/SuccessIndex_Setup.exe
